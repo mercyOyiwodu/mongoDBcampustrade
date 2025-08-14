@@ -11,6 +11,9 @@ const sellerSchema = new mongoose.Schema({
     // Add other necessary fields here
 }, { timestamps: true });
 
+// Add index for email field for faster authentication
+sellerSchema.index({ email: 1 });
+
 // Hash the password before saving to the database
 sellerSchema.pre('save', async function(next) {
     if (!this.isModified('password')) {

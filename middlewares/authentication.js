@@ -14,7 +14,7 @@ exports.authenticate = async (req, res, next) => {
         }
 
         const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-        const seller = await Seller.findByPk(decodedToken.sellerId);
+        const seller = await Seller.findById(decodedToken.sellerId);
 
         if (!seller) {
             return res.status(400).json({ message: 'Authentication failed: seller not found' });

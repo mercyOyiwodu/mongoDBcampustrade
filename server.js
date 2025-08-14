@@ -12,6 +12,7 @@ const adRouter = require('./router/adRouter')
 const checkRouter = require('./router/jambRouter');
 const session = require('express-session');
 const subCategoryRouter = require('./router/subCategory')
+const adminRoutes = require('./routes/adminRoutes');
 
 const secret = process.env.EXPRESS_SESSION_SECRET;
 const PORT = process.env.PORT;
@@ -31,10 +32,23 @@ const googleRouter = require('./router/googleAuth');
 
 const app = express();
 
+// Import rate limiters
+const { apiLimiter } = require('./middlewares/rateLimiter');
 
 // Middlewares
-// app.use(cors({origin: "*"}));
-app.use(cors({ origin: "*", methods: "GET,HEAD,PUT,PATCH,POST,DELETE" }));
+// Apply rate limiting to all requests
+app.use(apiLimiter);
+
+// Configure CORS for security - restrict origins in production
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? ['https://campustrade-kku1.onrender.com'] 
+  : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:4725'];
+
+app.use(cors({ 
+  origin: allowedOrigins, 
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true 
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
@@ -122,13 +136,21 @@ app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get('/', (req, res) => {
     res.send('Welcome to the Campus Trade Home Page');
 });
-app.use((error, req, res, next) => {
 
-  if (error) {
-    
-    return res.status(400).json({ message: error.message })
-  }
-})
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: 'Server is healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
+// Import and use centralized error handler
+const errorHandler = require('./middlewares/errorHandler');
+app.use(errorHandler);
 
 app.use('/api/v1/seller', sellerRouter);
 // app.use(sellerRouter);
@@ -139,6 +161,7 @@ app.use('/api/v1/kyc', kycRouter);
 app.use('/api/v1', transactionRouter);
 app.use('/api/v1', adRouter);
 app.use('/api/v1', subCategoryRouter);
+app.use('/api/admin', adminRoutes);
 app.use(googleRouter)
 
 app.listen(PORT, ()=>{

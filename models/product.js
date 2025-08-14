@@ -67,4 +67,12 @@ const productSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Add indexes for better query performance
+productSchema.index({ sellerId: 1 });
+productSchema.index({ subCategoryId: 1 });
+productSchema.index({ status: 1 });
+productSchema.index({ school: 1 });
+productSchema.index({ productName: 'text', description: 'text' }); // Text search index
+productSchema.index({ createdAt: -1 }); // For sorting by creation date
+
 module.exports = mongoose.model('Product', productSchema);

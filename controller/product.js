@@ -269,26 +269,36 @@ exports.getAllProductsBySubcategory = async (req, res) => {
 
 exports.searchProducts = async (req, res) => {
   try {
-    const { q = '' } = req.query; // q = search text
+    const { q = '', page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
 
-    const products = await Product.find({
-      status: 'approved',
-      $or: [
-        { productName: { $regex: q, $options: 'i' } }, // Case-insensitive search
-        { description: { $regex: q, $options: 'i' } },
-      ],
-    })
-      .sort({ createdAt: -1 })
+    let searchQuery = { status: 'approved' };
+    
+    // Use text search if query provided, otherwise return all approved products
+    if (q.trim()) {
+      searchQuery.$text = { $search: q };
+    }
+
+    const products = await Product.find(searchQuery)
+      .sort(q.trim() ? { score: { $meta: 'textScore' }, createdAt: -1 } : { createdAt: -1 })
+      .skip(skip)
+      .limit(parseInt(limit))
       .populate('subCategoryId')
-      .populate({ path: 'sellerId', select: '_id' }); // Only select _id for seller
+      .populate({ path: 'sellerId', select: '_id' });
+
+    const total = await Product.countDocuments(searchQuery);
 
     res.status(200).json({
+      success: true,
       message: 'Search successful',
       count: products.length,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit),
       data: products,
     });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };

@@ -1,5 +1,6 @@
 const express = require('express');
 const { createCategory, getAllCategories, getCategoryById, updateCategory, deleteCategory } = require('../controller/category');
+const adminAuth = require('../middlewares/adminAuth');
 const router = express.Router();
 
 
@@ -81,7 +82,7 @@ const router = express.Router();
  */
 
 
-router.post('/create-categories', createCategory);
+router.post('/create-categories', adminAuth, createCategory);
 /**
  * @swagger
  * /api/v1/all-categories:
@@ -151,7 +152,7 @@ router.get('/one-categories/:id', getCategoryById);
  *         description: Internal server error
  */
 
-router.put('/update-categories/:id', updateCategory);
+router.put('/update-categories/:id', adminAuth, updateCategory);
 /**
  * @swagger
  * /api/v1/delete-categories/{id}:
@@ -174,6 +175,6 @@ router.put('/update-categories/:id', updateCategory);
  *       500:
  *         description: Internal server error
  */
-router.delete('/delete-categories/:id', deleteCategory);
+router.delete('/delete-categories/:id', adminAuth, deleteCategory);
 
 module.exports = router;

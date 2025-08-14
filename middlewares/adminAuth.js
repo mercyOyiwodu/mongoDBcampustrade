@@ -30,7 +30,7 @@ exports.authenticateAdmin = async (req, res, next) => {
         }
 
         // Find the admin by id
-        const admin = await Admin.findByPk(decodedToken.id); // <-- FIXED: using 'id'
+        const admin = await Admin.findById(decodedToken.id);
         if (!admin) {
             return res.status(404).json({
                 message: 'Authentication failed: admin not found'
